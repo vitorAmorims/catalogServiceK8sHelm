@@ -46,4 +46,4 @@ jobs:
         with:
           context: .
           push: true
-          tags: ${{ secrets['DOCKERHUB_USERNAME'] }}/hello-dotnet:${{ github.run_number }}
+          tags: ${{ secrets['DOCKERHUB_USERNAME'] }}/catalog-services:${{ github.run_number }}
