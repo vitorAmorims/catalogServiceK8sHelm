@@ -44,6 +44,7 @@ jobs:
       - name: Build and Push Docker Image
         uses: docker/build-push-action@v7
         with:
-          context: .
+          context: ./Play.Catalog
+          file: ./Play.Catalog/src/Dockerfile 
           push: true
-          tags: ${{ secrets['DOCKERHUB_USERNAME'] }}/catalog-services:${{ github.run_number }}
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/catalog-services:${{ github.run_number }}
