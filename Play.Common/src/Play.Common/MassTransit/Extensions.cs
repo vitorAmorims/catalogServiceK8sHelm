@@ -35,5 +35,39 @@ namespace Play.Common.MassTransit
 
             return services;
         }
+        
+        // public static IServiceCollection AddMassTransitWithRabbitMq(this IServiceCollection services,
+        // Action<IBusFactoryConfigurator, IBusRegistrationContext>? customConfigure)
+        // {
+        //     services.AddMassTransit(configure =>
+        //     {
+        //         configure.AddConsumers(Assembly.GetEntryAssembly());
+
+        //         configure.UsingRabbitMq((context, configurator) =>
+        //         {
+        //             var configuration = context.GetService<IConfiguration>();
+        //             var serviceSettings = configuration.GetSection(nameof(ServiceSettings)).Get<ServiceSettings>();
+        //             var rabbitMQSettings = configuration.GetSection(nameof(RabbitMQSettings)).Get<RabbitMQSettings>();
+        //             configurator.Host(rabbitMQSettings.Host);
+		//     if (customConfigure != null)
+		//     {
+		//       customConfigure(configurator, context);
+		//     }
+		//     else
+		//     {
+        //       configurator.ConfigureEndpoints(context, new KebabCaseEndpointNameFormatter(serviceSettings.ServiceName, false));
+		//     }
+
+        //     configurator.UseMessageRetry(retryConfigurator =>
+        //     {
+        //         retryConfigurator.Interval(3, TimeSpan.FromSeconds(5));
+        //     });
+        //     });
+        //     });
+
+        //     services.AddMassTransitHostedService();
+
+        //     return services;
+        // }
     }
 }

@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using MassTransit.Mediator;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Caching.Memory;
 using Play.Common;
 using Play.Inventory.Entities;
 using Play.Inventory.Exception;
@@ -17,89 +18,97 @@ namespace Play.Inventory.Service.Controllers
     [Route("items")]
     public class ItemsController : ControllerBase
     {
-        private readonly IMediator _mediator;
+        // private readonly IMediator _mediator;
 
-        public ItemsController(IMediator mediator)
-        {
-            _mediator = mediator;
-        }
-        // private readonly IRepository<InventoryItem> inventoryItemsRepository;
-        // private readonly IRepository<CatalogItem> catalogItemsRepository;
-
-        // public ItemsController(IRepository<InventoryItem> inventoryItemsRepository, IRepository<CatalogItem> catalogItemsRepository)
+        // public ItemsController(IMediator mediator)
         // {
-        //     this.inventoryItemsRepository = inventoryItemsRepository;
-        //     this.catalogItemsRepository = catalogItemsRepository;
+        //     _mediator = mediator;
         // }
+        private IMemoryCache _cache;
+        private readonly IRepository<InventoryItem> inventoryItemsRepository;
+        private readonly IRepository<CatalogItem> catalogItemsRepository;
+
+        public ItemsController(IRepository<InventoryItem> inventoryItemsRepository, IRepository<CatalogItem> catalogItemsRepository,
+        IMemoryCache memoryCache)
+        {
+            this.inventoryItemsRepository = inventoryItemsRepository;
+            this.catalogItemsRepository = catalogItemsRepository;
+            _cache = memoryCache;
+        }
 
 
-        [HttpGet]
+        [HttpGet]//("{userId}")
         public async Task<ActionResult<IEnumerable<InventoryItemDto>>> GetAsync(Guid userId)
         {
+            if (userId == Guid.Empty) return BadRequest();
+            try
+            {
+                var inventoryItemEntities = await inventoryItemsRepository.GetAllAsync(item => item.UserId == userId);
+                if (inventoryItemEntities.Count() == 0)
+                    throw new DefaultException("UserId not exists");
+
+                var itemIds = inventoryItemEntities.Select(item => item.CatalogItemId);
+                var catalogItemEntities = await catalogItemsRepository.GetAllAsync(item => itemIds.Contains(item.Id));
+                if (catalogItemEntities.Count() == 0)
+                    throw new DefaultException("CatalogItemId not exists");
+
+                var inventoryItemDtos = catalogItemEntities.Select(catalogItem =>
+                {
+                    var inventoryItem = inventoryItemEntities.SingleOrDefault(i => i.CatalogItemId == catalogItem.Id);
+                    return inventoryItem.AsDto(catalogItem.Name, catalogItem.Description);
+                });
+
+                return Ok(inventoryItemDtos);
+
+                
+            }
+            catch (DefaultException ex)
+            {
+                return NotFound(ex.Message);
+            }
             // if (userId == Guid.Empty) return BadRequest();
             // try
             // {
-            //     var inventoryItemEntities = await inventoryItemsRepository.GetAllAsync(item => item.UserId == userId);
-            //     if (inventoryItemEntities.Count() == 0)
-            //         throw new DefaultException("UserId not exists");
-
-            //     var itemIds = inventoryItemEntities.Select(item => item.CatalogItemId);
-            //     var catalogItemEntities = await catalogItemsRepository.GetAllAsync(item => itemIds.Contains(item.Id));
-            //     if (catalogItemEntities.Count() == 0)
-            //         throw new DefaultException("CatalogItemId not exists");
-
-            //     var inventoryItemDtos = catalogItemEntities.Select(catalogItem =>
-            //     {
-            //         var inventoryItem = inventoryItemEntities.SingleOrDefault(i => i.CatalogItemId == catalogItem.Id);
-            //         return inventoryItem.AsDto(catalogItem.Name, catalogItem.Description);
-            //     });
-
-            //     return Ok(inventoryItemDtos);
+            //     var result = await _mediator.Send(new GetAsyncRequest { id = userId });
+            //     if(result != null)
+            //         return Ok(result);
+            //     else
+            //         return NoContent();
             // }
             // catch (DefaultException ex)
             // {
             //     return NotFound(ex.Message);
             // }
-            if (userId == Guid.Empty) return BadRequest();
-            try
-            {
-                var inventoryItemDtos = await _mediator.Send(new GetAsyncRequest{ id = userId });
-                return Ok(inventoryItemDtos);    
-            }
-            catch (DefaultException ex)
-            {
-                
-                return NotFound(ex.Message);
-            }
-            
         }
 
-        // [HttpPost]
-        // public async Task<ActionResult> PostAsync(GrantItemsDto grantItemsDto)
-        // {
-        //     var inventoryItem = await inventoryItemsRepository.GetAsync(
-        //         item => item.UserId == grantItemsDto.UserId && item.CatalogItemId == grantItemsDto.CatalogItemId);
+        [HttpPost]
+        public async Task<ActionResult> PostAsync(GrantItemsDto grantItemsDto)
+        {
+            var inventoryItem = await inventoryItemsRepository.GetAsync(
+                item => item.UserId == grantItemsDto.UserId && item.CatalogItemId == grantItemsDto.CatalogItemId);
 
 
-        //     if (inventoryItem == null)
-        //     {
-        //         inventoryItem = new InventoryItem
-        //         {
-        //             CatalogItemId = grantItemsDto.CatalogItemId,
-        //             UserId = grantItemsDto.UserId,
-        //             Quantity = grantItemsDto.Quantity,
-        //             AcquiredDate = DateTimeOffset.UtcNow
-        //         };
+            if (inventoryItem == null)
+            {
+                inventoryItem = new InventoryItem
+                {
+                    CatalogItemId = grantItemsDto.CatalogItemId,
+                    UserId = grantItemsDto.UserId,
+                    Quantity = grantItemsDto.Quantity,
+                    AcquiredDate = DateTimeOffset.UtcNow
+                };
 
-        //         await inventoryItemsRepository.CreateAsync(inventoryItem);
-        //     }
-        //     else
-        //     {
-        //         inventoryItem.Quantity += grantItemsDto.Quantity;
-        //         await inventoryItemsRepository.UpdateAsync(inventoryItem);
-        //     }
+                await inventoryItemsRepository.CreateAsync(inventoryItem);
+            }
+            else
+            {
+                inventoryItem.Quantity += grantItemsDto.Quantity;
+                await inventoryItemsRepository.UpdateAsync(inventoryItem);
+            }
 
-        //     return Ok();
-        // }
+            return Ok();
+            // await _mediator.Send(new PostAsyncRequest { grantItemsDto = grantItemsDto });
+            // return Ok();
+        }
     }
 }

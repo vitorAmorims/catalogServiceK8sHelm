@@ -30,14 +30,12 @@ namespace Play.Catalog.Service.Controllers
             return Ok(await _mediator.Send(new GetAsyncRequest()));
         }
 
-        // GET /items/{id}
         [HttpGet("{id}")]
         public async Task<ActionResult<Item>> GetByIdAsync(Guid id)
         {
             return await _mediator.Send(new GetAsyncByIdRequest { id = id });
         }
 
-        // POST /items
         [HttpPost]
         public async Task<ActionResult> PostAsync(CreateItemDto createItemDto)
         {
@@ -45,7 +43,6 @@ namespace Play.Catalog.Service.Controllers
             return CreatedAtAction(nameof(GetByIdAsync), new { id = result.Id }, result);
         }
 
-        // PUT /items/{id}
         [HttpPut("{id}")]
         public async Task<IActionResult> PutAsync(Guid id, UpdateItemDto updateItemDto)
         {
@@ -63,7 +60,6 @@ namespace Play.Catalog.Service.Controllers
                 return BadRequest();
         }
 
-        // DELETE /items/{id}
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteAsync(Guid id)
         {

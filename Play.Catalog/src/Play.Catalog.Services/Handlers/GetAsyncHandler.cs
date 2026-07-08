@@ -18,21 +18,18 @@ namespace Play.Catalog.Services.Handlers
     {
         private readonly IRepository<Item> _itemsRepository;
         private readonly IPublishEndpoint publishEndpoint;
-        private readonly IValidationService _validationService;
         private readonly IItemCache itemcache;
 
-        public GetAsyncHandler(IRepository<Item> itemsRepository, IPublishEndpoint publishEndpoint, IValidationService validationService,
+        public GetAsyncHandler(IRepository<Item> itemsRepository, IPublishEndpoint publishEndpoint,
         IItemCache itemcache)
         {
             _itemsRepository = itemsRepository;
             this.publishEndpoint = publishEndpoint;
-            _validationService = validationService;
             this.itemcache = itemcache;
         }
 
         public async Task<IEnumerable<ItemDto>> Handle(GetAsyncRequest request, CancellationToken cancellationToken)
         {
-            _validationService.Validate(request);
             return await itemcache.GetCachedItems();
         }
     }

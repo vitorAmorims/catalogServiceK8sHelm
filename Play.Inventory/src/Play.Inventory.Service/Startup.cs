@@ -15,13 +15,19 @@ using Polly;
 using Polly.Timeout;
 using Microsoft.Extensions.Logging;
 using Play.Inventory.Entities;
+using Play.Catalog.Contracts;
 using Play.Common.MassTransit;
+using MediatR;
+using System.Reflection;
+using Play.Inventory.Service.Services;
+using Play.Inventory.Service.Handlers;
 
 namespace Play.Inventory.Service
 {
     public class Startup
     {
         private const string AllowedOriginSetting = "AllowedOrigin";
+        private ServiceSettings serviceSettings;
         public Startup(IConfiguration configuration)
         {
             Configuration = configuration;
@@ -32,12 +38,26 @@ namespace Play.Inventory.Service
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+            serviceSettings = Configuration.GetSection(nameof(ServiceSettings))
+                .Get<ServiceSettings>();
+
             services.AddMongo()
                 .AddMongoRepository<InventoryItem>("inventoryItems")
                 .AddMongoRepository<CatalogItem>("catalogItems")
-                .AddMassTransitWithRabbitMq();
+                .AddMassTransitWithRabbitMq((config, context) =>
+                {
+                    config.ReceiveEndpoint("InventoryItemCreatedEvent", e =>
+                    {
+                        e.Consumer<CatalogItemCreated>(context);
+                    });
+                });
 
             AddCatalogClient(services);
+
+            services.AddMemoryCache();
+
+            services.AddMediatR(Assembly.GetExecutingAssembly());
+            services.AddScoped<IValidationService, ValidationService>();
 
             services.AddControllers();
             services.AddSwaggerGen(c =>
@@ -78,7 +98,6 @@ namespace Play.Inventory.Service
         private static void AddCatalogClient(IServiceCollection services)
         {
             Random jitterer = new Random();
-
             services.AddHttpClient<CatalogClient>(client =>
             {
                 client.BaseAddress = new Uri("http://localhost:5000");

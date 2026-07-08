@@ -1,0 +1,11 @@
+**/bin/obj
+**/obj
+**/publish
+
+.dockerignore
+Dockerfile
+
+.git
+
+**/appsettings.Development.json
+**/appsettings.json

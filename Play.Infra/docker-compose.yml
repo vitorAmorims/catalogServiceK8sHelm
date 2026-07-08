@@ -5,28 +5,35 @@ services:
     image: mongo
     container_name: mongo
     ports:
-      - 27017:27017
+      - "27017:27017"
     volumes:
       - mongodbdata:/data/db
+
   rabbitmq:
     image: rabbitmq:management
     container_name: rabbitmq
-    ports: 
-      - 5672:5672
-      - 15672:15672
+    ports:
+      - "5672:5672"
+      - "15672:15672"
     volumes:
       - rabbitmqdata:/var/lib/rabbitmq
     hostname: rabbitmq
-  redis:
-    image: redis
-    command: redis-server --requiredpass redis --appendonly yes
-    container_name: redis
+
+  catalog-service:
+    image: vtamorims/catalog-services:latest
+    container_name: catalog-service
     ports:
-      - 6379:6379
-    volumes:
-      - redisdata:/data/redis
+      - "5000:80"
+    depends_on:
+      - mongo
+      - rabbitmq
+    environment:
+      - ServiceSettings__ServiceName=Catalog
+      - MongoDbSettings__Host=mongo
+      - MongoDbSettings__Port=27017
+      - RabbitMQSettings__Host=rabbitmq
+      - AllowedOrigin=http://localhost:3000
 
 volumes:
   mongodbdata:
   rabbitmqdata:
-  redisdata:

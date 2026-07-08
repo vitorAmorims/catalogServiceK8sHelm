@@ -1,10 +1,14 @@
+using System;
 namespace Play.Catalog.Services.Services
 {
     public class ValidationService : IValidationService
     {
-        public void Validate<T>(T obj)
+        public void Validate<T>(T obj) where T : class
         {
-            // meu codigo de validação throw new System.NotImplementedException();
+            if(obj == null)
+            {
+                throw new ArgumentNullException(nameof(obj), "The object to validate cannot be null.");
+            }
         }
     }
 }

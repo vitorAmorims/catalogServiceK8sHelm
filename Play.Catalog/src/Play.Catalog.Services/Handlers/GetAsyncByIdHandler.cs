@@ -17,13 +17,11 @@ namespace Play.Catalog.Services.Handlers
     {
         private readonly IRepository<Item> _itemsRepository;
         private readonly IPublishEndpoint publishEndpoint;
-        private readonly IValidationService _validationService;
 
-        public GetAsyncByIdHandler(IRepository<Item> itemsRepository, IPublishEndpoint publishEndpoint, IValidationService validationService)
+        public GetAsyncByIdHandler(IRepository<Item> itemsRepository, IPublishEndpoint publishEndpoint)
         {
             _itemsRepository = itemsRepository;
             this.publishEndpoint = publishEndpoint;
-            _validationService = validationService;
         }
 
         public override bool Equals(object obj)
@@ -38,10 +36,7 @@ namespace Play.Catalog.Services.Handlers
 
         public async Task<Item> Handle(GetAsyncByIdRequest request, CancellationToken cancellationToken)
         {
-            _validationService.Validate<Guid>(request.id);
-
             return await _itemsRepository.GetAsync(request.id);
-
         }
 
         public override string ToString()
