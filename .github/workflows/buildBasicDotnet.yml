@@ -13,8 +13,14 @@ jobs:
         with:
           dotnet-version: '6.0'
 
-      - name: Restore dependencies
-        run: dotnet restore ./src/Play.Catalog.Services
+      - name: Identificar a pasta
+        run: |
+          echo "=== Onde estou ==="
+          pwd
+          echo "=== Arquivos na raiz ==="
+          ls -la
+          echo "=== Estrutura completa ==="
+          ls -R
 
       - name: Build application
         run: dotnet build --no-restore --configuration Release
