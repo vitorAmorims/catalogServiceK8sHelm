@@ -1,0 +1,8 @@
+# 1. Remova o deploy atual
+helm uninstall play-catalog-service
+
+# 2. Delete o PVC (Volume) do RabbitMQ antigo para evitar conflito de permissão de dados
+kubectl delete pvc --all
+
+# 3. Instale novamente
+helm install play-catalog-service ./ --values ./values.yaml

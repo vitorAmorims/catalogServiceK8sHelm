@@ -1,0 +1,152 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: play-catalog-service-mongodb
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mongodb
+  template:
+    metadata:
+      labels:
+        app: mongodb
+    spec:
+      containers:
+        - name: mongo
+          image: mongo:latest
+          ports:
+            - containerPort: 27017
+          # 1. Aponta onde o Mongo grava dentro do container
+          volumeMounts:
+            - name: mongo-persistent-storage
+              mountPath: /data/db
+      # 2. Víncula com uma pasta física no seu Linux
+      volumes:
+        - name: mongo-persistent-storage
+          hostPath:
+            path: /home/vitor/data/play-catalog/mongodb
+            type: DirectoryOrCreate
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: play-catalog-service-mongodb
+spec:
+  ports:
+    - port: 27017
+      targetPort: 27017
+  selector:
+    app: mongodb
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: play-catalog-service-rabbitmq
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: rabbitmq
+  template:
+    metadata:
+      labels:
+        app: rabbitmq
+    spec:
+      containers:
+        - name: rabbitmq
+          image: rabbitmq:management
+          ports:
+            - containerPort: 5672
+            - containerPort: 15672
+          # 3. Aponta onde o RabbitMQ grava as filas dentro do container
+          volumeMounts:
+            - name: rabbitmq-persistent-storage
+              mountPath: /var/lib/rabbitmq
+      # 4. Víncula com uma pasta física no seu Linux
+      volumes:
+        - name: rabbitmq-persistent-storage
+          hostPath:
+            path: /home/vitor/data/play-catalog/rabbitmq
+            type: DirectoryOrCreate
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: play-catalog-service-rabbitmq
+spec:
+  ports:
+    - name: amqp
+      port: 5672
+      targetPort: 5672
+    - name: management
+      port: 15672
+      targetPort: 15672
+  selector:
+    app: rabbitmq
+# apiVersion: apps/v1
+# kind: Deployment
+# metadata:
+#   name: play-catalog-service-mongodb
+# spec:
+#   replicas: 1
+#   selector:
+#     matchLabels:
+#       app: mongodb
+#   template:
+#     metadata:
+#       labels:
+#         app: mongodb
+#     spec:
+#       containers:
+#         - name: mongo
+#           image: mongo:latest
+#           ports:
+#             - containerPort: 27017
+# ---
+# apiVersion: v1
+# kind: Service
+# metadata:
+#   name: play-catalog-service-mongodb
+# spec:
+#   ports:
+#     - port: 27017
+#       targetPort: 27017
+#   selector:
+#     app: mongodb
+# ---
+# apiVersion: apps/v1
+# kind: Deployment
+# metadata:
+#   name: play-catalog-service-rabbitmq
+# spec:
+#   replicas: 1
+#   selector:
+#     matchLabels:
+#       app: rabbitmq
+#   template:
+#     metadata:
+#       labels:
+#         app: rabbitmq
+#     spec:
+#       containers:
+#         - name: rabbitmq
+#           image: rabbitmq:management # Imagem oficial idêntica ao compose!
+#           ports:
+#             - containerPort: 5672
+#             - containerPort: 15672
+# ---
+# apiVersion: v1
+# kind: Service
+# metadata:
+#   name: play-catalog-service-rabbitmq
+# spec:
+#   ports:
+#     - name: amqp
+#       port: 5672
+#       targetPort: 5672
+#     - name: management
+#       port: 15672
+#       targetPort: 15672
+#   selector:
+#     app: rabbitmq
